@@ -3,6 +3,7 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use phpDocumentor\Reflection\Types\Nullable;
 
 return new class extends Migration
 {
@@ -14,10 +15,11 @@ return new class extends Migration
         Schema::create('tokos', function (Blueprint $table) {
             $table->id();
             $table->string('nama', 50);
-            $table->string('lantai', 10);
-            $table->string('nomor_toko', 50);
+            $table->string('slug', 255);
+            $table->string('deskripsi');
             $table->string('telepon', 25);
-            $table->text('link');
+            $table->text('link')->nullable();
+            $table->text('image');
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
         });

@@ -15,7 +15,8 @@ class BeritaController extends Controller
     // Tampilkan semua berita
     public function index()
     {
-        $beritas = Berita::latest()->get();
+        $beritas = Berita::paginate(10);
+        $beritas->lastest()->get();
 
         return response()->json([
             'success' => true,

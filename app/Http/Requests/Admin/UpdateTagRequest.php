@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreProdukRequest extends FormRequest
+class UpdateTagRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,12 +22,7 @@ class StoreProdukRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'         => 'required|string|max:255',
-            'deskripsi'     => 'required|string',
-            'detail'        => 'required|string|max:100',
-            'image'         => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'toko_id'       => 'required|exists:tokos,id',
-            'kategori_id'   => 'required|exists:kategoris,id',
+            'nama' => 'sometimes|string|max:255'
         ];
     }
 }

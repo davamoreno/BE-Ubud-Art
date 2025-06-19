@@ -3,11 +3,13 @@
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\TokoController;
+use App\Http\Controllers\User\RiviewController;
 use App\Http\Controllers\Admin\BeritaController;
 use App\Http\Controllers\Admin\ProdukController;
+use App\Http\Controllers\Admin\KategoriController;
 use App\Http\Controllers\User\Auth\AuthCostController;
 use App\Http\Controllers\Admin\Auth\AuthAdminController;
-use App\Http\Controllers\User\RiviewController;
+use App\Http\Controllers\Admin\TagController;
 
 Route::post('/refresh', function () {
     return response()->json([
@@ -25,10 +27,12 @@ Route::prefix('admin')->group(function () {
     Route::delete('users/{id}', [AuthAdminController::class, 'destroy']); 
 });
 
-Route::middleware(['auth:sanctum', 'role:Admin'])->prefix('admin')->group(function () {
+Route::middleware(['auth:api', 'role:Admin'])->prefix('admin')->group(function () {
     Route::apiResource('berita', BeritaController::class);
-    Route::apiResource('toko', TokoController::class);
     Route::apiResource('produk', ProdukController::class);
+    Route::apiResource('kategori', KategoriController::class);
+    Route::apiResource('tag', TagController::class);
+    Route::apiResource('toko', TokoController::class);
 });
 
 Route::middleware(['jwt.auth', 'role:Costumer'])->prefix('costumer')->group(function () {

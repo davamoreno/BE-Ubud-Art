@@ -23,11 +23,13 @@ class StoreTokoRequest extends FormRequest
     {
         return [
             'nama'          => 'required|string|max:50',
-            'lantai'        => 'required|string|max:10',
+            'deskripsi'     => 'required|string|max:255',
             'telepon'       => 'required|string|max:25',
-            'nomor_toko'    => 'required|string|max:50',
+            'image'         => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
             'link'          => 'nullable|url',
             'status'        => 'sometimes|in:active,inactive',
+            'tag_ids' => 'array|nullable',
+            'tag_ids.*' => 'exists:tags,id',
         ];
     }
 }

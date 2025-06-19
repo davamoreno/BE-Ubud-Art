@@ -17,10 +17,24 @@ class ProdukResource extends JsonResource
        return [
             'id' => $this->id,
             'title' => $this->title,
+            'slug' => $this->slug,
             'deskripsi' => $this->deskripsi,
             'detail' => $this->detail,
             'image' => $this->image,
-            'toko_id' => $this->toko_id,
+            'toko' => [
+                $this->toko->id,
+                $this->toko->nama,
+            ],
+            'kategori' => [
+                $this->kategori->id,
+                $this->kategori->nama,
+            ],
+            'tags' => $this->tags->map(function ($tag) {
+                return [
+                    'id' => $tag->id,
+                    'nama' => $tag->nama,
+                ];
+            }),
             'created_at' => $this->created_at?->toDateTimeString(),
             'updated_at' => $this->updated_at?->toDateTimeString(),
         ];

@@ -11,7 +11,7 @@ class UpdateProdukRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return auth()->user()?->hasRole('Admin');
     }
 
     /**
@@ -22,11 +22,13 @@ class UpdateProdukRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'title'     => 'sometimes|string|max:255',
-            'deskripsi' => 'sometimes|string',
-            'detail'    => 'sometimes|string|max:100',
-            'image'     => 'sometimes|image|mimes:jpeg,png,jpg,webp|max:2048',
-            'toko_id'   => 'sometimes|exists:tokos,id',
+            'title'         => 'sometimes|string|max:255',
+            'deskripsi'     => 'sometimes|string',
+            'detail'        => 'sometimes|string|max:100',
+            'image'         => 'sometimes|image|mimes:jpeg,png,jpg,webp|max:2048',
+            'toko_id'       => 'sometimes|exists:tokos,id',
+            'kategori_id'   => 'sometimes|exists:kategoris,id',
+            'tag_id'        => 'sometimes|exists:tags,id'
         ];
     }
 }

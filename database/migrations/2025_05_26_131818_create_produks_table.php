@@ -14,10 +14,12 @@ return new class extends Migration
         Schema::create('produks', function (Blueprint $table) {
             $table->id();
             $table->string('title', 255);
+            $table->string('slug', 255);
             $table->text('deskripsi', 100);
             $table->text('detail', 100);
             $table->text('image', 255);
             $table->foreignId('toko_id')->constrained('tokos')->onDelete('cascade');
+            $table->foreignId('kategori_id')->constrained('kategoris')->onDelete('cascade');
             $table->timestamps();
         });
     }

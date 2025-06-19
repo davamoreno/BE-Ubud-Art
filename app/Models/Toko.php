@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Toko extends Model
 {
@@ -12,13 +13,40 @@ class Toko extends Model
     //Data Yang Bisa Terisi
     protected $fillable = [
         'nama',
-        'nama_pemilik',
-        'nomor_toko',
-        'lantai',
+        'slug',
+        'deskripsi',
+        'image',
         'telepon',
         'user_id'
     ];
     
+    protected static function booted()
+    {
+        static::creating(function ($toko) {
+            $toko->slug = $toko->generateSlug();
+        });
+
+        static::updating(function ($toko) {
+            if ($toko->isDirty('nama')) {
+                $toko->slug = $toko->generateSlug();
+            }
+        });
+
+    }
+    
+    public function generateSlug(): string
+    {
+        $baseSlug = Str::slug($this->nama);
+        $slug = $baseSlug;
+        $i = 1;
+
+        while (Toko::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $i++;
+        }
+
+        return $slug;
+    }
+
     //Relasi :
 
     // Many To Many

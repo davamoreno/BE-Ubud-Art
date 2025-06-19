@@ -23,9 +23,9 @@ class UpdateTokoRequest extends FormRequest
     {
          return [
             'nama'          => 'sometimes|string|max:50',
-            'lantai'        => 'sometimes|string|max:10',
+            'deskripsi'     => 'sometimes|string|max:255',
             'telepon'       => 'sometimes|string|max:25',
-            'nomor_toko'    => 'sometimes|string|max:50',
+            'image'         => 'sometimes|image|mimes:jpeg,png,jpg,webp|max:2048',
             'link'          => 'nullable|url',
             'status'        => 'sometimes|in:active,inactive',
         ];
