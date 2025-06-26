@@ -11,7 +11,7 @@ class UpdateKategoriRequest extends FormRequest
      */
     public function authorize(): bool
     {
-       return auth()->user()?->hasRole('Admin');
+       return true;
     }
 
     /**

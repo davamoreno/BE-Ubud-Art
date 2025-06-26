@@ -5,13 +5,13 @@ namespace App\Enums;
 enum UserRoles: string
 {
     case ADMIN = 'Admin';
-    case COSTUMER = 'Costumer';
+    case CUSTOMER = 'Customer';
 
     public function label(): string
     {
         return match($this){
             static::ADMIN => 'Admin',
-            static::COSTUMER => 'Costumer',
+            static::CUSTOMER => 'Customer',
         };
     }
 }

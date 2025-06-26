@@ -4,7 +4,7 @@ namespace App\Http\Requests\Admin;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class UpdateTagRequest extends FormRequest
+class SearchBeritaRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,7 +22,8 @@ class UpdateTagRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama' => 'sometimes|string|max:255'
+            'search' => ['nullable', 'string', 'max:100'],
+            'page' => ['nullable', 'integer'],
         ];
     }
 }

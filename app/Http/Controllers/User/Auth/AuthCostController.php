@@ -14,7 +14,7 @@ use App\Http\Requests\User\Auth\LoginRequest;
 class AuthCostController extends Controller
 {
     public function index() {
-        $user = User::role(UserRoles::COSTUMER->value)->get();
+        $user = User::role(UserRoles::CUSTOMER->value)->get();
         return AuthResource::collection($user);
     }
 
@@ -27,7 +27,7 @@ class AuthCostController extends Controller
             'password' => bcrypt($data['password'])
         ]);
 
-        $user->assignRole(UserRoles::COSTUMER->value);
+        $user->assignRole(UserRoles::CUSTOMER->value);
     
         return new AuthResource($user);
     }
@@ -44,7 +44,7 @@ class AuthCostController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        if (auth()->user()->hasRole(UserRoles::COSTUMER->value)) {
+        if (auth()->user()->hasRole(UserRoles::CUSTOMER->value)) {
             return $this->respondWithToken($token);
         }else{
             return response()->json(['message' => 'You\'re not a admin'], 403);
@@ -55,7 +55,7 @@ class AuthCostController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type' => 'bearer',
-            'expires_in' => auth('api')->factory()->getTTL() * 60,
+            'expires_in' => auth('api')->factory()->getTTL() * 1440,
             'user' => [
                 'id'    => auth()->id(),
                 'name'  => auth()->user()->name,

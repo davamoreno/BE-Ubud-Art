@@ -5,17 +5,29 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Tag;
 use App\Models\Produk;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Admin\SearchProdukRequest;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\Admin\ProdukResource;
 use App\Http\Requests\Admin\StoreProdukRequest;
 use App\Http\Requests\Admin\UpdateProdukRequest;
+use App\Queries\ProdukQuery;
 
 class ProdukController extends Controller
 {
-    public function index()
+    public function index(SearchProdukRequest $request)
     {
-        $produks = Produk::with(['toko', 'kategori', 'tags'])->paginate(10);
-        return ProdukResource::collection($produks);
+        $filters = $request->validated();
+        $produks = ProdukQuery::filter($filters)->latest()->paginate(10);
+        return response()->json([
+            'success' => true,
+            'data' => ProdukResource::collection($produks),
+            'meta' => [
+                 'current_page' => $produks->currentPage(),
+                'last_page' => $produks->lastPage(),
+                'per_page' => $produks->perPage(),
+                'total' => $produks->total(),
+            ]
+        ]); 
     }
 
     public function store(StoreProdukRequest $request)
@@ -29,11 +41,18 @@ class ProdukController extends Controller
 
         $produk = Produk::create($data);
 
-        if ($request->has('tags')) {
-            $tags = explode(',', $request->input('tags'));
-            $tagIds = Tag::whereIn('nama', array_map('trim', $tags))->pluck('id');
-            $produk->tags()->attach($tagIds);
-        }
+        $tagIds = $request->input('tags'); 
+
+    // Pastikan $tagIds tidak null sebelum digunakan
+    if (empty($tagIds)) {
+        $tagIds = [];
+    }
+
+    // Buat produk tanpa field tags terlebih dahulu
+    $product = Produk::create($request->except('tags'));
+
+    // Lalu sinkronkan relasi many-to-many
+    $product->tags()->sync($tagIds);
 
         return new ProdukResource($produk);
     }
@@ -55,6 +74,7 @@ class ProdukController extends Controller
     {
         $produk = Produk::where('slug', $slug)->first();
         $data = $request->validated();
+
         if ($request->hasFile('image')) {
             if ($produk->image && Storage::disk('public')->exists($produk->image)) {
                 Storage::disk('public')->delete($produk->image);
@@ -66,12 +86,10 @@ class ProdukController extends Controller
         $produk->update($data);
 
         if ($request->has('tags')) {
-            $tags = explode(',', $request->input('tags'));
-            $tagIds = Tag::whereIn('nama', array_map('trim', $tags))->pluck('id');
-            $produk->tags()->sync($tagIds);
+            $produk->tags()->sync($request->input('tags', []));
         }
 
-        return new ProdukResource($produk);
+        return new ProdukResource($produk->load(['kategori', 'toko', 'tags']));
     }
 
     public function destroy($slug)

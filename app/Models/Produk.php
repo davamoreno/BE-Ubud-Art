@@ -21,6 +21,11 @@ class Produk extends Model
         'kategori_id'
     ];
 
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
+
     protected static function booted()
     {
         static::creating(function ($produk) {
@@ -41,8 +46,19 @@ class Produk extends Model
         $slug = $baseSlug;
         $i = 1;
 
+        $query = Produk::where('slug', $slug);
+
+        if ($this->exists) {
+            $query->where('id', '!=', $this->id);
+        }
+
         while (Produk::where('slug', $slug)->exists()) {
             $slug = $baseSlug . '-' . $i++;
+            $query = Produk::where('slug', $slug);
+
+            if ($this->exists) {
+                $query->where('id', '!=', $this->id);
+            }
         }
 
         return $slug;

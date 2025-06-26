@@ -19,6 +19,15 @@ class Berita extends Model
         'user_id'
     ];
 
+    protected $policies = [
+        \App\Models\Berita::class => \App\Policies\BeritaPolicy::class
+    ];
+
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
+
     protected static function booted()
     {
         static::creating(function ($berita) {
@@ -45,8 +54,21 @@ class Berita extends Model
         $slug = $baseSlug;
         $i = 1;
 
+        $query = Berita::where('slug', $slug);
+
+        if($this->exists)
+        {
+            $query->where('id', '!=', $this->id);
+        }
+
         while (Berita::where('slug', $slug)->exists()) {
             $slug = $baseSlug . '-' . $i++;
+
+            $query = Berita::where('slug', $slug);
+            if($this->exists)
+            {
+                $query->where('id', '!=', $this->id);
+            }
         }
 
         return $slug;

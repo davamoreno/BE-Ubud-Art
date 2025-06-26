@@ -27,15 +27,35 @@ Route::prefix('admin')->group(function () {
     Route::delete('users/{id}', [AuthAdminController::class, 'destroy']); 
 });
 
-Route::middleware(['auth:api', 'role:Admin'])->prefix('admin')->group(function () {
+Route::middleware('auth:api')->prefix('admin')->group(function () {
     Route::apiResource('berita', BeritaController::class);
     Route::apiResource('produk', ProdukController::class);
     Route::apiResource('kategori', KategoriController::class);
     Route::apiResource('tag', TagController::class);
     Route::apiResource('toko', TokoController::class);
+
+     Route::get('/auth-test', function () {
+        $user = auth()->user();
+
+        if (!$user) {
+            // Ini seharusnya tidak terjadi jika middleware auth:api bekerja
+            return response()->json(['message' => 'Middleware auth:api dilewati, user NULL.'], 401);
+        }
+
+        return response()->json([
+            'status' => 'SUKSES!',
+            'pesan' => 'Kamu berhasil mengakses rute terproteksi.',
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'roles' => $user->getRoleNames() // Menggunakan metode dari Spatie untuk memastikan
+            ]
+        ]);
+    });
 });
 
-Route::middleware(['jwt.auth', 'role:Costumer'])->prefix('costumer')->group(function () {
+Route::prefix('costumer')->group(function () {
     Route::post('/{produk}/review', [RiviewController::class, 'store']);
     Route::apiResource('review', RiviewController::class);
 });

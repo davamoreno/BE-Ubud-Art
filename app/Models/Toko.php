@@ -19,6 +19,11 @@ class Toko extends Model
         'telepon',
         'user_id'
     ];
+
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
     
     protected static function booted()
     {
@@ -40,8 +45,20 @@ class Toko extends Model
         $slug = $baseSlug;
         $i = 1;
 
+        $query = Toko::where('slug', $slug);
+
+        if ($this->exists) {
+            $query->where('id', '!=', $this->id);
+        }
+
         while (Toko::where('slug', $slug)->exists()) {
             $slug = $baseSlug . '-' . $i++;
+
+            $query = Toko::where('slug', $slug);
+
+            if ($this->exists) {
+                $query->where('id', '!=', $this->id);
+            }
         }
 
         return $slug;

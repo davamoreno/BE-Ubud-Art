@@ -22,12 +22,12 @@ class ProdukResource extends JsonResource
             'detail' => $this->detail,
             'image' => $this->image,
             'toko' => [
-                $this->toko->id,
-                $this->toko->nama,
+                'id' => $this->toko->id,
+                'nama' => $this->toko->nama,
             ],
             'kategori' => [
-                $this->kategori->id,
-                $this->kategori->nama,
+                'id' => $this->kategori->id,
+                'nama' => $this->kategori->nama,
             ],
             'tags' => $this->tags->map(function ($tag) {
                 return [
