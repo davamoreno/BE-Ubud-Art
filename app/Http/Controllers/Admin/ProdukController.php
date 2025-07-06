@@ -4,102 +4,137 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Tag;
 use App\Models\Produk;
+use App\Queries\ProdukQuery;
+use App\Jobs\LogProductViewJob;
+use Illuminate\Support\Facades\Log;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Admin\SearchProdukRequest;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\Admin\ProdukResource;
 use App\Http\Requests\Admin\StoreProdukRequest;
+use App\Http\Requests\Admin\SearchProdukRequest;
 use App\Http\Requests\Admin\UpdateProdukRequest;
-use App\Queries\ProdukQuery;
+use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class ProdukController extends Controller
 {
+    use AuthorizesRequests, ValidatesRequests;
+    
     public function index(SearchProdukRequest $request)
     {
+        $this->authorize('viewAny', Produk::class);
         $filters = $request->validated();
-        $produks = ProdukQuery::filter($filters)->latest()->paginate(10);
-        return response()->json([
-            'success' => true,
-            'data' => ProdukResource::collection($produks),
-            'meta' => [
-                 'current_page' => $produks->currentPage(),
-                'last_page' => $produks->lastPage(),
-                'per_page' => $produks->perPage(),
-                'total' => $produks->total(),
-            ]
-        ]); 
+        // Semua keajaiban sorting dan filtering terjadi di dalam baris ini!
+        $produks = ProdukQuery::filter($filters)->paginate(10); 
+        return ProdukResource::collection($produks);
     }
 
     public function store(StoreProdukRequest $request)
     {
+        $this->authorize('create', Produk::class);
+        // Validasi dan ambil data dari request
         $data = $request->validated();
 
+        // 3. Handle file upload jika ada
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('produk', 'public');
-            $data['image'] = $path;
+        $data['image'] = $request->file('image')->store('produk', 'public');
         }
 
+        // 4. Buat produk HANYA SATU KALI dan simpan di variabel $produk
         $produk = Produk::create($data);
 
-        $tagIds = $request->input('tags'); 
-
-    // Pastikan $tagIds tidak null sebelum digunakan
-    if (empty($tagIds)) {
-        $tagIds = [];
-    }
-
-    // Buat produk tanpa field tags terlebih dahulu
-    $product = Produk::create($request->except('tags'));
-
-    // Lalu sinkronkan relasi many-to-many
-    $product->tags()->sync($tagIds);
-
-        return new ProdukResource($produk);
-    }
-
-    public function show($slug)
-    {
-        $produk = Produk::with(['toko', 'kategori', 'tags'])->where('slug', $slug)->first();
-
-        if (!$produk) {
-            return response()->json([
-                'message' => 'Produk not found'
-            ], 404);
+        // 5. Sinkronkan tags ke produk yang BARU SAJA dibuat
+        if ($request->has('tags')) {
+            $produk->tags()->sync($request->input('tags', []));
         }
 
-        return new ProdukResource($produk);
+        // 2. KIRIM "LONCENG" SETELAH BERHASIL
+        Redis::publish('recommendation-updates', 'refresh');
+
+        return new ProdukResource($produk->load(['kategori', 'toko', 'tags']));
     }
 
-    public function update(UpdateProdukRequest $request, $slug)
+
+    public function show($slug)
+    {  
+        $produk = Produk::with(['toko', 'kategori', 'tags'])->where('slug', $slug)->first();
+
+        $rekomendasiProduk = collect();
+
+        // 2. GUNAKAN BLOK TRY-CATCH
+        // Ini penting agar aplikasi Laravel tidak crash jika servis Flask sedang mati.
+        try {
+            // 3. PANGGIL/LEMPAR API KE FLASK MENGGUNAKAN Http FACADE
+            // Alamat ini harus sesuai dengan alamat server Flask Anda berjalan.
+            if (auth('api')->check()) {
+                // Jalankan pencatatan di latar belakang
+                LogProductViewJob::dispatch(auth('api')->id(), $produk->id);
+            }
+            $response = Http::post('http://127.0.0.1:5000/recommend', [
+                'product_id' => $produk->id,
+            ]);
+        
+            // 4. PROSES JAWABAN DARI FLASK
+            if ($response->successful()) {
+                $rekomendasiIds = $response->json()['recommendations'];
+            
+                // Ambil data produk lengkap dari database Laravel berdasarkan ID yang diterima
+                if (!empty($rekomendasiIds)) {
+                    $rekomendasiProduk = Produk::whereIn('id', $rekomendasiIds)->get();
+                }
+            }
+        } catch (\Exception $e) {
+            // Jika gagal terhubung ke servis Flask, catat errornya di log Laravel.
+            // Aplikasi akan tetap berjalan dan hanya menampilkan rekomendasi kosong.
+            Log::error('Gagal menghubungi servis rekomendasi: ' . $e->getMessage());
+        }
+
+        // 5. KEMBALIKAN SEMUA DATA DALAM SATU RESPON
+        return response()->json([
+            'data' => new ProdukResource($produk->load(['toko', 'kategori', 'tags'])),
+            'rekomendasi' => ProdukResource::collection($rekomendasiProduk)
+        ]);
+    }
+
+    public function update(UpdateProdukRequest $request, Produk $produk)
     {
-        $produk = Produk::where('slug', $slug)->first();
+        $this->authorize('update', $produk);
+
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
             if ($produk->image && Storage::disk('public')->exists($produk->image)) {
                 Storage::disk('public')->delete($produk->image);
             }
-
             $data['image'] = $request->file('image')->store('produk', 'public');
         }
 
-        $produk->update($data);
-
+       $produk->update($data);
         if ($request->has('tags')) {
             $produk->tags()->sync($request->input('tags', []));
         }
+
+        // 2. KIRIM "LONCENG" SETELAH BERHASIL
+        Redis::publish('recommendation-updates', 'refresh');
 
         return new ProdukResource($produk->load(['kategori', 'toko', 'tags']));
     }
 
     public function destroy($slug)
     {
+        $this->authorize('delete', Produk::class);
+
         $produk = Produk::where('slug', $slug)->first();
         if ($produk->image && Storage::disk('public')->exists($produk->image)) {
             Storage::disk('public')->delete($produk->image);
         }
 
         $produk->delete();
-        return response()->json(['message' => 'Produk deleted successfully']);
+
+        Redis::publish('recommendation-updates', 'refresh');
+
+        return response()->json(['message' => 'Produk berhasil dihapus.']);
     }
 }

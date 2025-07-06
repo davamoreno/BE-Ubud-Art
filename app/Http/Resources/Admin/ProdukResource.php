@@ -21,6 +21,7 @@ class ProdukResource extends JsonResource
             'deskripsi' => $this->deskripsi,
             'detail' => $this->detail,
             'image' => $this->image,
+            'rating' => (float) $this->rating ?? 0.0,
             'toko' => [
                 'id' => $this->toko->id,
                 'nama' => $this->toko->nama,

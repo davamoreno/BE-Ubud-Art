@@ -4,12 +4,8 @@ namespace App\Http\Controllers\Admin\Auth;
 
 use App\Models\User;
 use App\Enums\UserRoles;
-use Illuminate\Http\Request;
-use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator;
+use Spatie\Permission\Models\Role; // <-- 1. IMPORT MODEL ROLE
 use App\Http\Requests\Admin\Auth\AuthRequest;
 use App\Http\Resources\Admin\Auth\AuthResource;
 use App\Http\Requests\Admin\Auth\UpdateAdminRequest;
@@ -22,14 +18,17 @@ class AuthAdminController extends Controller
         $credentials = $request->only(['email', 'password']);
 
         if (!$token = auth('api')->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['error' => 'Email atau password salah.'], 401);
         }
 
-        if (auth()->user()->hasRole(UserRoles::ADMIN->value)) {
-            return $this->respondWithToken($token);
-        }else{
-            return response()->json(['message' => 'You\'re not a admin'], 403);
+        // Cek apakah user yang berhasil login adalah seorang Admin
+        // Menggunakan auth()->user() setelah attempt sudah aman.
+        if (!auth()->user()->hasRole(UserRoles::ADMIN->value)) {
+            auth('api')->logout(); // Logout paksa jika bukan admin
+            return response()->json(['error' => 'Akun ini tidak memiliki akses admin.'], 403);
         }
+
+        return $this->respondWithToken($token);
     }
 
     // Ambil semua user dengan role Admin
@@ -42,6 +41,7 @@ class AuthAdminController extends Controller
     // Buat user admin baru
     public function store(AuthRequest $request)
     {
+        
         $data = $request->validated();
 
         $user = User::create([
@@ -50,25 +50,29 @@ class AuthAdminController extends Controller
             'password' => bcrypt($data['password']),
         ]);
 
-        $user->assignRole(UserRoles::ADMIN->value);
-        $user->save();
+        // 4. PERBAIKAN BUG UTAMA: Cari dan berikan role dari guard 'api'
+        $adminRole = Role::findByName(UserRoles::ADMIN->value, 'api');
+        $user->assignRole($adminRole);
+        
+        // $user->save() tidak perlu dipanggil setelah create.
 
         return new AuthResource($user);
     }
 
-    // Tampilkan detail admin tertentu
-    public function show($id)
+    // 5. PERBAIKAN: Gunakan Route-Model Binding untuk konsistensi
+    // Ini untuk melihat detail admin SPESIFIK, bukan profil diri sendiri
+    public function show(User $user)
     {
-        $user = User::role(UserRoles::ADMIN->value)->findOrFail($id);
         return new AuthResource($user);
     }
 
-    // Update data admin
-    public function update(UpdateAdminRequest $request, $id)
+    // 6. PERBAIKAN: Gunakan Route-Model Binding
+    public function update(UpdateAdminRequest $request, User $user)
     {
-        $user = User::role(UserRoles::ADMIN->value)->findOrFail($id);
 
         $data = $request->validated();
+        
+        // Tidak perlu lagi: $user = User::role(...)->findOrFail($id);
 
         $user->update([
             'name'  => $data['name'],
@@ -82,13 +86,18 @@ class AuthAdminController extends Controller
         return new AuthResource($user->fresh()->load('roles'));
     }
 
-    // Hapus admin
-    public function destroy($id)
+    // 7. PERBAIKAN: Gunakan Route-Model Binding
+    public function destroy(User $user)
     {
-        $user = User::role(UserRoles::ADMIN->value)->findOrFail($id);
         $user->delete();
 
-        return response()->json(['message' => 'Admin deleted successfully.']);
+        return response()->json(['message' => 'Admin berhasil dihapus.']);
+    }
+
+    // Method ini bisa dibuat menjadi "get my profile"
+    public function profile()
+    {
+        return new AuthResource(auth()->user());
     }
 
     protected function respondWithToken($token)
@@ -96,14 +105,8 @@ class AuthAdminController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type'   => 'bearer',
-            'expires_in'   => auth('api')->factory()->getTTL() * 1440,
-            'user'         => [
-                'id' => auth()->id(),
-                'name' => auth()->user()->name,
-                'email' => auth()->user()->email, 
-                'role' => auth()->user()->getRoleNames()->first(),
-            ],
+            'expires_in'   => auth('api')->factory()->getTTL() * 1440, // 24 jam
+            'user'         => new AuthResource(auth()->user()),
         ]);
     }
-
 }

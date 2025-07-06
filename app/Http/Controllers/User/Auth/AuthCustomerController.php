@@ -3,15 +3,16 @@
 namespace App\Http\Controllers\User\Auth;
 
 use App\Models\User;
+use App\Enums\UserRoles;
 use Illuminate\Http\Request;
+use Spatie\Permission\Models\Role;
 use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\Validated;
 use App\Http\Requests\User\Auth\AuthRequest;
-use App\Http\Resources\User\Auth\AuthResource;
-use App\Enums\UserRoles;
 use App\Http\Requests\User\Auth\LoginRequest;
+use App\Http\Resources\User\Auth\AuthResource;
 
-class AuthCostController extends Controller
+class AuthCustomerController extends Controller
 {
     public function index() {
         $user = User::role(UserRoles::CUSTOMER->value)->get();
@@ -27,7 +28,8 @@ class AuthCostController extends Controller
             'password' => bcrypt($data['password'])
         ]);
 
-        $user->assignRole(UserRoles::CUSTOMER->value);
+        $customerRole = Role::findByName(UserRoles::CUSTOMER->value, 'api');
+        $user->assignRole($customerRole);
     
         return new AuthResource($user);
     }
@@ -47,7 +49,7 @@ class AuthCostController extends Controller
         if (auth()->user()->hasRole(UserRoles::CUSTOMER->value)) {
             return $this->respondWithToken($token);
         }else{
-            return response()->json(['message' => 'You\'re not a admin'], 403);
+            return response()->json(['message' => 'You\'re not a user'], 403);
         }
     }
 

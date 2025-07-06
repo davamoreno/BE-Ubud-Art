@@ -3,74 +3,69 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Toko;
+use App\Queries\TokoQuery;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\Admin\TokoResource;
 use App\Http\Requests\Admin\StoreTokoRequest;
+use App\Http\Requests\Admin\SearchTokoRequest;
 use App\Http\Requests\Admin\UpdateTokoRequest;
+use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class TokoController extends Controller
 {
-    public function index()
+    use AuthorizesRequests, ValidatesRequests;
+    
+    public function index(SearchTokoRequest $request)
     {
-        $tokos = Toko::paginate(10);
+        $this->authorize('viewAny', Toko::class);
+        $filters = $request->validated();
+        $tokos = TokoQuery::filter($filters)->latest()->paginate(10);
         return TokoResource::collection($tokos);
     }
 
     public function store(StoreTokoRequest $request)
     {
+        $this->authorize('create', Toko::class);
         $data = $request->validated();
-
         if ($request->hasFile('image')) {
-            $path = $request->file('image')->store('toko', 'public');
-            $data['image'] = $path;
+            $data['image'] = $request->file('image')->store('toko', 'public');
         }
-
         $toko = Toko::create($data);
         return new TokoResource($toko);
     }
 
-    public function show($slug)
+    // PERBAIKAN: Menggunakan Route-Model Binding
+    public function show(Toko $toko)
     {
-        $toko = Toko::Where('slug', $slug)->first();
-    
-        if (!$toko) {
-            return response()->json([
-                'message' => 'Toko not found'
-            ], 404);
-        }
-    
-        return response()->json([
-            'success' => true,
-            'data' => new TokoResource($toko)
-        ]);
+        $this->authorize('view', $toko);
+        return new TokoResource($toko->load('produks')); // Eager load produknya
     }
 
-    public function update(UpdateTokoRequest $request, $slug)
+    // PERBAIKAN: Menggunakan Route-Model Binding
+    public function update(UpdateTokoRequest $request, Toko $toko)
     {
-        $toko = Toko::where('slug', $slug)->first();
+        $this->authorize('update', $toko);
         $data = $request->validated();
-
         if ($request->hasFile('image')) {
            if ($toko->image && Storage::disk('public')->exists($toko->image)) {
-                Storage::disk('public')->delete($toko->image);
-            }
-
-            $data['image'] = $request->file('image')->store('toko', 'public');
+               Storage::disk('public')->delete($toko->image);
+           }
+           $data['image'] = $request->file('image')->store('toko', 'public');
         }
-
         $toko->update($data);
         return new TokoResource($toko);
     }
 
-    public function destroy($slug)
+    // PERBAIKAN: Menggunakan Route-Model Binding
+    public function destroy(Toko $toko)
     {
-        $toko = Toko::where('slug', $slug)->first();   
+        $this->authorize('delete', $toko);
         if ($toko->image && Storage::disk('public')->exists($toko->image)) {
             Storage::disk('public')->delete($toko->image);
         }
-
         $toko->delete();
-        return response()->json(['message' => 'Toko deleted successfully']);
+        return response()->json(['message' => 'Toko berhasil dihapus.']);
     }
 }

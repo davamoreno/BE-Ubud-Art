@@ -17,7 +17,9 @@ class Toko extends Model
         'deskripsi',
         'image',
         'telepon',
-        'user_id'
+        'user_id',
+        'rating', // Rata-rata rating dari semua produk
+        'products_count' // Jumlah produk yang dimiliki
     ];
 
     public function getRouteKeyName()
@@ -62,6 +64,20 @@ class Toko extends Model
         }
 
         return $slug;
+    }
+
+    public function recalculateRating(): void
+    {
+        // Ambil rata-rata rating dari semua produk yang 'rating'-nya lebih dari 0
+        $this->rating = $this->produks()
+                             ->where('rating', '>', 0)
+                             ->avg('rating') ?? 0;
+        
+        // Hitung jumlah produk yang dimiliki
+        $this->products_count = $this->produks()->count();
+
+        // Simpan perubahan ke database
+        $this->save();
     }
 
     //Relasi :

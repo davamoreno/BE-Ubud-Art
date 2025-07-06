@@ -9,12 +9,21 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\User\RiviewResource;
 use App\Http\Requests\User\StoreRiviewRequest;
 use App\Http\Requests\User\UpdateRiviewRequest;
+use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use App\Http\Requests\User\SearchRiviewRequest;
+use App\Queries\RiviewQuery;
 
 class RiviewController extends Controller
 {
-    public function index()
+    use AuthorizesRequests, ValidatesRequests;
+
+    public function index(SearchRiviewRequest $request)
     {
-        $reviews = Riview::with(['user', 'produk'])->paginate(10);
+        $this->authorize('viewAny', Riview::class);
+        
+        $filters = $request->validated();
+        $reviews = RiviewQuery::filter($filters)->paginate($filters['per_page'] ?? 10);
         return RiviewResource::collection($reviews);
     }
 
@@ -64,5 +73,22 @@ class RiviewController extends Controller
 
         $review->delete();
         return response()->json(['message' => 'Review deleted successfully']);
+    }
+
+    public function indexByProduct(SearchRiviewRequest $request, Produk $produk)
+    {
+        // Otorisasi bisa dibuat lebih spesifik jika perlu, tapi viewAny biasanya cukup
+        $this->authorize('viewAny', Riview::class);
+        
+        // Gabungkan filter dari request dengan produk_id dari URL
+        $filters = array_merge(
+            $request->validated(), 
+            ['produk_id' => $produk->id]
+        );
+    
+        $reviews = RiviewQuery::filter($filters)
+                              ->paginate($filters['per_page'] ?? 10);
+                              
+        return RiviewResource::collection($reviews);
     }
 }

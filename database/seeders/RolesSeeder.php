@@ -5,7 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Spatie\Permission\PermissionRegistrar; // Import ini untuk best practice
 
 class RolesSeeder extends Seeder
 {
@@ -14,22 +14,33 @@ class RolesSeeder extends Seeder
      */
     public function run(): void
     {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        // Selalu reset cache di awal
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
 
-        $resources = ['berita', 'toko', 'produk', 'riview'];
+        // Tentukan guard yang akan kita gunakan di seluruh seeder ini
+        $guardName = 'api';
 
+        $resources = ['berita', 'toko', 'produk', 'riview', 'user']; // Tambahkan 'user' untuk policy user
         $actions = ['viewany', 'view', 'create', 'update', 'delete'];
 
-        foreach($resources as $resource){
-            foreach($actions as $action){
-                Permission::create(['name' => $action . '-' . $resource]);
+        // Loop untuk membuat permission, sekarang DENGAN guard_name
+        foreach ($resources as $resource) {
+            foreach ($actions as $action) {
+                // Gunakan firstOrCreate agar aman dijalankan ulang
+                Permission::firstOrCreate([
+                    'name' => $action . '-' . $resource,
+                    'guard_name' => $guardName // <-- PERBAIKAN UTAMA DI SINI
+                ]);
             }
         }
 
-        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        // Buat Role Admin untuk guard 'api'
+        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => $guardName]);
+        // Sekarang aman, karena semua permission juga memiliki guard 'api'
         $adminRole->givePermissionTo(Permission::all());
         
-        $customerRole = Role::firstOrCreate(['name' => 'Customer', 'guard_name' => 'web']);
+        // Buat Role Customer untuk guard 'api'
+        $customerRole = Role::firstOrCreate(['name' => 'Customer', 'guard_name' => $guardName]);
 
         $customerReadPermissions = [
             'viewany-berita', 'view-berita',
@@ -44,7 +55,8 @@ class RolesSeeder extends Seeder
             'delete-riview',
         ];
 
-        $customerPermission = array_merge($customerReadPermissions, $customerReviewCrudPermissions);
-        $customerRole->syncPermissions($customerPermission);
+        $customerPermissions = array_merge($customerReadPermissions, $customerReviewCrudPermissions);
+        // syncPermissions juga akan aman karena semua permission dan role punya guard yang sama
+        $customerRole->syncPermissions($customerPermissions);
     }
 }

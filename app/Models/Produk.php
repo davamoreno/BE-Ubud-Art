@@ -96,5 +96,14 @@ class Produk extends Model
     {
         return $this->hasMany(Riview::class);
     }
+    
+    public function recalculateRating()
+    {
+        $reviews = $this->reviews(); // Asumsi relasi Anda bernama 'riviews'
+
+        $this->rating = $reviews->avg('rating') ?? 0;
+        $this->reviews_count = $reviews->count();
+        $this->save();
+    }
 
 }
