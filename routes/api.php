@@ -41,7 +41,7 @@ Route::prefix('auth')->group(function () {
         Route::post('login', [AuthCustomerController::class, 'login']);
         Route::post('register', [AuthCustomerController::class, 'store']);
     });
-    
+
     // Rute untuk refresh token (membutuhkan token yang valid/bisa di-refresh)
     Route::middleware('auth:api')->post('/refresh', function () {
         return response()->json([
@@ -110,17 +110,17 @@ Route::middleware('auth:api')->group(function () {
         Route::post('berita', [BeritaController::class, 'store']);
         Route::put('berita/{berita}', [BeritaController::class, 'update']);
         Route::delete('berita/{berita}', [BeritaController::class, 'destroy']);
-        
+
         // CRUD untuk Produk
         Route::post('produk', [ProdukController::class, 'store']);
         Route::put('produk/{produk}', [ProdukController::class, 'update']);
         Route::delete('produk/{produk}', [ProdukController::class, 'destroy']);
-        
+
         // CRUD untuk Kategori
         Route::post('kategori', [KategoriController::class, 'store']);
         Route::put('kategori/{id}', [KategoriController::class, 'update']);
         Route::delete('kategori/{id}', [KategoriController::class, 'destroy']);
-        
+
         // CRUD untuk Tag
         Route::post('tag', [TagController::class, 'store']);
         Route::put('tag/{id}', [TagController::class, 'update']);
@@ -130,19 +130,18 @@ Route::middleware('auth:api')->group(function () {
         Route::post('toko', [TokoController::class, 'store']);
         Route::put('toko/{toko}', [TokoController::class, 'update']);
         Route::delete('toko/{toko}', [TokoController::class, 'destroy']);
-        
+
         // Manajemen User oleh Admin
         Route::get('admins', [AuthAdminController::class, 'index']);
         Route::get('profile', [AuthAdminController::class, 'show']);
         Route::put('edit', [AuthAdminController::class, 'update']);
         Route::delete('delete', [AuthAdminController::class, 'destroy']);
     });
-    
+
     // Rute untuk Customer yang sudah login
-    Route::prefix('customer')->group(function(){
+    Route::prefix('customer')->group(function () {
         Route::post('review/{id}', [RiviewController::class, 'store']); // Create review untuk sebuah produk
         Route::put('review/{id}', [RiviewController::class, 'update']); // Update review spesifik
         Route::delete('review/{id}', [RiviewController::class, 'destroy']); // Delete review spesifik
     });
 });
-

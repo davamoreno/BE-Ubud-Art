@@ -16,7 +16,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class TokoController extends Controller
 {
     use AuthorizesRequests, ValidatesRequests;
-    
+
     public function index(SearchTokoRequest $request)
     {
         $this->authorize('viewAny', Toko::class);
@@ -49,10 +49,10 @@ class TokoController extends Controller
         $this->authorize('update', $toko);
         $data = $request->validated();
         if ($request->hasFile('image')) {
-           if ($toko->image && Storage::disk('public')->exists($toko->image)) {
-               Storage::disk('public')->delete($toko->image);
-           }
-           $data['image'] = $request->file('image')->store('toko', 'public');
+            if ($toko->image && Storage::disk('public')->exists($toko->image)) {
+                Storage::disk('public')->delete($toko->image);
+            }
+            $data['image'] = $request->file('image')->store('toko', 'public');
         }
         $toko->update($data);
         return new TokoResource($toko);

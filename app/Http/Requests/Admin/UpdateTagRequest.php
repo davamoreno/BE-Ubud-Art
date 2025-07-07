@@ -22,7 +22,7 @@ class UpdateTagRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nama' => 'sometimes|string|max:255'
+            'nama' => 'sometimes|max:255'
         ];
     }
 }

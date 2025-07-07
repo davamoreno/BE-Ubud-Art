@@ -3,53 +3,39 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Berita;
-use App\Queries\BeritaQuery;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\Admin\BeritaResource;
 use App\Http\Requests\Admin\StoreBeritaRequest;
-use App\Http\Requests\Admin\SearchBeritaRequest;
 use App\Http\Requests\Admin\UpdateBeritaRequest;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 
 class BeritaController extends Controller
 {
-    use AuthorizesRequests, ValidatesRequests;
-    
+    use ValidatesRequests, AuthorizesRequests;
     // Tampilkan semua berita
-    public function index(SearchBeritaRequest $request)
+    public function index()
     {
-        $filters = $request->validated();
-
-        $beritas = BeritaQuery::filter($filters)
-            ->latest()
-            ->paginate(10);
+        $beritas = Berita::latest()->paginate(10);
 
         return response()->json([
             'success' => true,
-            'data' => BeritaResource::collection($beritas),
-            'meta' => [
-                'current_page' => $beritas->currentPage(),
-                'last_page' => $beritas->lastPage(),
-                'per_page' => $beritas->perPage(),
-                'total' => $beritas->total(),
-            ]
+            'data' => BeritaResource::collection($beritas)
         ]);
     }
-
 
     // Simpan berita baru
     public function store(StoreBeritaRequest $request)
     {
-        $this->authorize('create', Berita::class);
-        
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('berita', 'public');
         }
+
+        // $data['user_id'] = auth()->id();
 
         $berita = Berita::create($data);
 
@@ -58,14 +44,13 @@ class BeritaController extends Controller
             'message' => 'Berita berhasil ditambahkan.',
             'data' => new BeritaResource($berita)
         ], 201);
-       
     }
 
     // Detail berita
     public function show($slug)
     {
         $berita = Berita::where('slug', $slug)->first();
-        
+
         return response()->json([
             'success' => true,
             'data' => new BeritaResource($berita)
@@ -75,9 +60,8 @@ class BeritaController extends Controller
     // Update berita
     public function update(UpdateBeritaRequest $request, $slug)
     {
-        $this->authorize('update', Berita::class);
-
         $berita = Berita::where('slug', $slug)->first();
+        $this->authorize('update', $berita);
         $data = $request->validated();
 
         if ($request->hasFile('image')) {
@@ -100,8 +84,6 @@ class BeritaController extends Controller
     // Hapus berita
     public function destroy(Berita $berita)
     {
-        $this->authorize('delete', Berita::class);
-        
         if ($berita->image && Storage::disk('public')->exists($berita->image)) {
             Storage::disk('public')->delete($berita->image);
         }

@@ -26,21 +26,22 @@ class KategoriController extends Controller
     public function show($id)
     {
         $kategori = Kategori::find($id);
-    
+
         if (!$kategori) {
             return response()->json([
                 'message' => 'kategori not found'
             ], 404);
         }
-    
+
         return response()->json([
             'success' => true,
             'data' => new KategoriResource($kategori)
         ]);
     }
 
-    public function update(UpdateKategoriRequest $request, Kategori $kategori)
+    public function update(UpdateKategoriRequest $request, $id)
     {
+        $kategori = Kategori::findOrFail($id);
         $kategori->update($request->validated());
         return new kategoriResource($kategori);
     }

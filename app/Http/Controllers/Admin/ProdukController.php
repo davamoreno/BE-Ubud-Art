@@ -21,13 +21,13 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 class ProdukController extends Controller
 {
     use AuthorizesRequests, ValidatesRequests;
-    
+
     public function index(SearchProdukRequest $request)
     {
         $this->authorize('viewAny', Produk::class);
         $filters = $request->validated();
         // Semua keajaiban sorting dan filtering terjadi di dalam baris ini!
-        $produks = ProdukQuery::filter($filters)->paginate(10); 
+        $produks = ProdukQuery::filter($filters)->paginate(10);
         return ProdukResource::collection($produks);
     }
 
@@ -39,7 +39,7 @@ class ProdukController extends Controller
 
         // 3. Handle file upload jika ada
         if ($request->hasFile('image')) {
-        $data['image'] = $request->file('image')->store('produk', 'public');
+            $data['image'] = $request->file('image')->store('produk', 'public');
         }
 
         // 4. Buat produk HANYA SATU KALI dan simpan di variabel $produk
@@ -58,7 +58,7 @@ class ProdukController extends Controller
 
 
     public function show($slug)
-    {  
+    {
         $produk = Produk::with(['toko', 'kategori', 'tags'])->where('slug', $slug)->first();
 
         $rekomendasiProduk = collect();
@@ -75,11 +75,11 @@ class ProdukController extends Controller
             $response = Http::post('http://127.0.0.1:5000/recommend', [
                 'product_id' => $produk->id,
             ]);
-        
+
             // 4. PROSES JAWABAN DARI FLASK
             if ($response->successful()) {
                 $rekomendasiIds = $response->json()['recommendations'];
-            
+
                 // Ambil data produk lengkap dari database Laravel berdasarkan ID yang diterima
                 if (!empty($rekomendasiIds)) {
                     $rekomendasiProduk = Produk::whereIn('id', $rekomendasiIds)->get();
@@ -111,7 +111,7 @@ class ProdukController extends Controller
             $data['image'] = $request->file('image')->store('produk', 'public');
         }
 
-       $produk->update($data);
+        $produk->update($data);
         if ($request->has('tags')) {
             $produk->tags()->sync($request->input('tags', []));
         }
@@ -124,9 +124,8 @@ class ProdukController extends Controller
 
     public function destroy($slug)
     {
-        $this->authorize('delete', Produk::class);
-
         $produk = Produk::where('slug', $slug)->first();
+        $this->authorize('delete', $produk);
         if ($produk->image && Storage::disk('public')->exists($produk->image)) {
             Storage::disk('public')->delete($produk->image);
         }

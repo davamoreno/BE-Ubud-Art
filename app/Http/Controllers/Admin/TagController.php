@@ -26,21 +26,22 @@ class TagController extends Controller
     public function show($id)
     {
         $tag = Tag::find($id);
-    
+
         if (!$tag) {
             return response()->json([
                 'message' => 'Tag not found'
             ], 404);
         }
-    
+
         return response()->json([
             'success' => true,
             'data' => new TagResource($tag)
         ]);
     }
 
-    public function update(UpdateTagRequest $request, Tag $tag)
+    public function update(UpdateTagRequest $request, $id)
     {
+        $tag = Tag::findOrFail($id);
         $tag->update($request->validated());
         return new TagResource($tag);
     }
