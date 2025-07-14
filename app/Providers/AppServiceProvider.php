@@ -6,6 +6,7 @@ use App\Models\Produk;
 use App\Models\Riview;
 use App\Observers\ProdukObserver;
 use App\Observers\RiviewObserver;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -23,6 +24,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Auth::shouldUse('api');
         Riview::observe(RiviewObserver::class);
         Produk::observe(ProdukObserver::class);
     }

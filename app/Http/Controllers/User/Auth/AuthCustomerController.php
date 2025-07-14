@@ -46,9 +46,15 @@ class AuthCustomerController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        if (auth()->user()->hasRole(UserRoles::CUSTOMER->value)) {
+        $user = auth('api')->user();
+
+        if (!$user) {
+            return response()->json(['message' => 'Authentication failed'], 401);
+        }
+
+        if ($user->hasRole(UserRoles::CUSTOMER->value)) {
             return $this->respondWithToken($token);
-        }else{
+        } else {
             return response()->json(['message' => 'You\'re not a user'], 403);
         }
     }

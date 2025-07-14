@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Builder;
 
 class Produk extends Model
 {
@@ -36,6 +37,10 @@ class Produk extends Model
             if ($produk->isDirty('title')) {
                 $produk->slug = $produk->generateSlug();
             }
+        });
+
+        static::addGlobalScope('order', function (Builder $builder) {
+            $builder->orderBy('created_at', 'desc');
         });
 
     }

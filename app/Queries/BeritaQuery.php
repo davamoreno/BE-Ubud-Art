@@ -14,9 +14,6 @@ class BeritaQuery
                     $q->where('title', 'like', "%{$search}%")
                       ->orWhere('deskripsi', 'like', "%{$search}%");
                 });
-            })
-            ->when($filters['status'] ?? null, function ($query, $status) {
-                $query->where('status', $status);
-            });
+            })->latest();
     }
 }

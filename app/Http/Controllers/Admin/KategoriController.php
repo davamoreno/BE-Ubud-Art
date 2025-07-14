@@ -46,8 +46,14 @@ class KategoriController extends Controller
         return new kategoriResource($kategori);
     }
 
-    public function destroy(kategori $kategori)
+    public function destroy($id)
     {
+        $kategori = Kategori::findOrFail($id);
+        if (!$kategori) {
+            return response()->json([
+                'message' => 'Kategori not found'
+            ], 404);
+        }
         $kategori->delete();
         return response()->json(['message' => 'Kategori deleted successfully']);
     }

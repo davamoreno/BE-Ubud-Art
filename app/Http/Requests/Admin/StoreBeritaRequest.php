@@ -23,7 +23,7 @@ class StoreBeritaRequest extends FormRequest
     {
         return [
             'title'     =>  'string|max:255|required',
-            'deskripsi' =>  'string|max:255|required',
+            'deskripsi' =>  'string|required',
             'image'     =>  'required|image|mimes:png,jpg,jpeg|max:2048'
         ];
     }

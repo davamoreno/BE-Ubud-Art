@@ -67,10 +67,6 @@ class RiviewController extends Controller
 
     public function destroy(Riview $review)
     {
-        if ($review->user_id !== auth()->id()) {
-            return response()->json(['message' => 'Unauthorized'], 403);
-        }
-
         $review->delete();
         return response()->json(['message' => 'Review deleted successfully']);
     }

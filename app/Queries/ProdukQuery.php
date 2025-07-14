@@ -73,6 +73,12 @@ class ProdukQuery
         $perPage = $this->filters['per_page'] ?? $perPage;
         return $this->query->paginate($perPage);
     }
-
+    
+    public function getRandom(int $limit = 8)
+    {
+        // inRandomOrder() akan mengacak urutan.
+        // limit() akan membatasi jumlah hasilnya.
+        return $this->query->inRandomOrder()->limit($limit)->get();
+    }
     // Anda bisa menambahkan method lain jika perlu
 }

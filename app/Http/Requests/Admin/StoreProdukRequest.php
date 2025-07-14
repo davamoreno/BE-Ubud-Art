@@ -24,7 +24,7 @@ class StoreProdukRequest extends FormRequest
         return [
             'title'         => 'required|string|max:255',
             'deskripsi'     => 'required|string',
-            'detail'        => 'required|string|max:100',
+            'detail'        => 'required|string',
             'image'         => 'required|image|mimes:jpeg,png,jpg,webp|max:2048',
             'toko_id'       => 'required|exists:tokos,id',
             'kategori_id'   => 'required|exists:kategoris,id',

@@ -23,7 +23,7 @@ class SearchBeritaRequest extends FormRequest
     {
         return [
             'search' => ['nullable', 'string', 'max:100'],
-            'page' => ['nullable', 'integer'],
+            'per_page' => 'nullable|integer|min:1|max:100',
         ];
     }
 }

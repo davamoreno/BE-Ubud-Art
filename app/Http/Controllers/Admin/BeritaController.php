@@ -3,11 +3,13 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Models\Berita;
+use App\Queries\BeritaQuery;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Resources\Admin\BeritaResource;
 use App\Http\Requests\Admin\StoreBeritaRequest;
+use App\Http\Requests\Admin\SearchBeritaRequest;
 use App\Http\Requests\Admin\UpdateBeritaRequest;
 use Illuminate\Foundation\Validation\ValidatesRequests;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -16,14 +18,26 @@ class BeritaController extends Controller
 {
     use ValidatesRequests, AuthorizesRequests;
     // Tampilkan semua berita
-    public function index()
+       public function index(SearchBeritaRequest $request)
     {
-        $beritas = Berita::latest()->paginate(10);
+        // Otorisasi (jika perlu)
+        // $this->authorize('viewAny', Berita::class);
+        
+        $filters = $request->validated();
+        
+        // --- PERBAIKAN UTAMA DI SINI ---
+        // 1. Ambil nilai 'per_page' dari filter yang sudah divalidasi.
+        // 2. Jika tidak ada, gunakan nilai default (misalnya 10).
+        $perPage = $filters['per_page'] ?? 10;
 
-        return response()->json([
-            'success' => true,
-            'data' => BeritaResource::collection($beritas)
-        ]);
+        // Gunakan variabel $perPage di dalam method paginate()
+        $berita = BeritaQuery::filter($filters)->paginate($perPage);
+                              
+        return BeritaResource::collection($berita) 
+            ->additional([
+                'success' => true,
+                'message' => 'Berita retrieved successfully'
+            ]);
     }
 
     // Simpan berita baru
@@ -58,9 +72,8 @@ class BeritaController extends Controller
     }
 
     // Update berita
-    public function update(UpdateBeritaRequest $request, $slug)
+    public function update(UpdateBeritaRequest $request, Berita $berita)
     {
-        $berita = Berita::where('slug', $slug)->first();
         $this->authorize('update', $berita);
         $data = $request->validated();
 

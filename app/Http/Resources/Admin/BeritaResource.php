@@ -20,7 +20,7 @@ class BeritaResource extends JsonResource
             'deskripsi'     => $this->deskripsi,
             'image'         => $this->image ? asset('storage/' . $this->image) : null,
             'slug'          => $this->slug,
-            'created_at'    => $this->created_at,
+            'created_at'    => $this->created_at
         ];
     }
 }

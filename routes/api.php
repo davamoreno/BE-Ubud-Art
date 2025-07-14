@@ -68,6 +68,7 @@ Route::get('berita', [BeritaController::class, 'index']);
 Route::get('berita/{berita}', [BeritaController::class, 'show']); // Menggunakan {berita} untuk route model binding
 
 // Rute untuk Produk
+Route::get('produk/random', [ProdukController::class, 'getRandomProducts']);
 Route::get('produk', [ProdukController::class, 'index']);
 Route::get('produk/{produk}', [ProdukController::class, 'show']);
 Route::get('produk/{produk}/reviews', [RiviewController::class, 'indexByProduct']);
@@ -88,8 +89,7 @@ Route::get('toko/{toko}', [TokoController::class, 'show']);
 Route::get('review', [RiviewController::class, 'index']);
 Route::get('review/{id}', [RiviewController::class, 'show']); // Menggunakan {riview} sesuai nama model/controller
 
-Route::get('/dashboard/recommendations', [DashboardController::class, 'recommendations']);
-
+Route::get('dashboard/recommendations', [DashboardController::class, 'recommendations']);
 
 /*
 |--------------------------------------------------------------------------
